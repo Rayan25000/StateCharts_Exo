@@ -21,6 +21,31 @@ const polylineMachine = createMachine(
         initial: "idle",
         states : {
             idle: {
+                on: {
+                    MOUSECLICK: {
+                        actions: "createLine",
+                        target: "drawing",
+                        cond: "pasPlein"
+                    }
+                }
+            },
+            drawing: {
+                on: {
+                    MOUSEMOVE: {
+                        actions: "setLastPoint"
+                    },
+                    Backspace: {
+                        actions: "removeLastPoint",
+                        cond: "plusDeDeuxPoints"
+                    },
+                    Enter: {
+                        actions: "saveLine",
+                        cond: "nombrePointsValide"
+                    },
+                    Escape: {
+                        actions: "abandon"
+                    }
+                }
             }
         }
     },
@@ -88,6 +113,10 @@ const polylineMachine = createMachine(
                 // Deux coordonnées pour chaque point, plus le point provisoire
                 return polyline.points().length > 6;
             },
+            nombrePointsValide: (context, event) => {
+                const numPoints = polyline.points().length / 2;
+                return numPoints >= 2 && numPoints <= MAX_POINTS;
+            }
         },
     }
 );
@@ -109,7 +138,8 @@ stage.on("mousemove", () => {
 
 // Envoi des touches clavier à la machine
 window.addEventListener("keydown", (event) => {
-    console.log("Key pressed:", event.key);
-    // Enverra "a", "b", "c", "Escape", "Backspace", "Enter"... à la machine
-    polylineService.send(event.key);
+    if (event.key === "Backspace" || event.key === "Enter" || event.key === "Escape") {
+        event.preventDefault(); // Prevent browser default actions for these keys
+        polylineService.send(event.key);
+    }
 });
